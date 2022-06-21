@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -23,7 +24,52 @@ connection.connect((err)=>{
     console.log("success: Mysql db connected...")
 })
 
-app.get("/colleges",(req,res)=>{
+const verifyToken =(req,res,next)=>{
+    let authHead = req.headers.authorization;
+    console.log("authHead-",authHead);
+    if(authHead==undefined){
+        res.send({error:"no token provided"})
+        return;
+    }
+
+    let token = authHead.split(" ")[1];
+    console.log("Token-",token);
+    jwt.verify(token,"secretkey",(err,decoded)=>{
+        if(err){
+            res.send({error:"authentication failed"})
+        }else{
+            // res.send({success:"authentication success",decoded})
+            next();
+        }
+    }) 
+}
+
+app.post("/login",(req,res)=>{
+    let username = req.body.username;
+    let password = req.body.password;
+    if(username==undefined || password==undefined){
+        res.status(500).send({error:"authentication failed"})
+        return;
+    }
+
+    let qr = `select * from users where user_name='${username}' and user_password= sha1('${password}')`;
+    connection.query(qr,(err,result)=>{
+        if(err || result.length==0){
+            //console.log(err);
+            res.send({error:"user not found"})
+        }else{
+           let resp ={
+            id:result[0].user_id,
+            status:result[0].user_stausus
+           }
+           let token = jwt.sign(resp,"secretkey",{expiresIn:60});
+           res.send({authentication:true,token:token})
+        }
+    })
+
+})
+
+app.get("/colleges",verifyToken,(req,res)=>{
    let qr = `select * from college`;
    connection.query(qr,(err,result)=>{
     if(err){
