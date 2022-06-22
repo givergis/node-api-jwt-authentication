@@ -26,14 +26,14 @@ connection.connect((err)=>{
 
 const verifyToken =(req,res,next)=>{
     let authHead = req.headers.authorization;
-    console.log("authHead-",authHead);
+   // console.log("authHead-",authHead);
     if(authHead==undefined){
         res.send({error:"no token provided"})
         return;
     }
 
     let token = authHead.split(" ")[1];
-    console.log("Token-",token);
+   // console.log("Token-",token);
     jwt.verify(token,"secretkey",(err,decoded)=>{
         if(err){
             res.send({error:"authentication failed"})
@@ -60,7 +60,7 @@ app.post("/login",(req,res)=>{
         }else{
            let resp ={
             id:result[0].user_id,
-            status:result[0].user_stausus
+            status:result[0].user_status
            }
            let token = jwt.sign(resp,"secretkey",{expiresIn:60});
            res.send({authentication:true,token:token})
